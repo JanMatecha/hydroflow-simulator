@@ -28,3 +28,16 @@ python test_script.py
 pytest
 ```
 
+## Kontrola a formátování kódu
+
+```powershell
+ruff check .
+ruff format --check .
+```
+
+Automatickou opravu a formátování lze provést příkazy:
+
+```powershell
+ruff check --fix .
+ruff format .
+```
