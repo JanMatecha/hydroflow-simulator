@@ -1,43 +1,60 @@
-# Local AI Test
+# HydroFlow
 
-Malý ukázkový Python projekt sloužící k ověření lokálního běhového prostředí.
+Webová aplikace pro simulaci ustáleného proudění vody v rovné kruhové trubce.
+Uživatel zadá tlakový rozdíl, geometrii trubky, drsnost a teplotu vody. Výpočet
+provede OpenModelica a web zobrazí průtok, rychlost, Reynoldsovo číslo,
+součinitel tření a průběh tlakové ztráty.
 
-## Požadavky
+Model používá Darcyho–Weisbachovu rovnici. Nezahrnuje místní odpory, převýšení,
+stlačitelnost ani přechodové jevy.
 
-- Python 3.10 nebo novější
+## Spuštění v Dockeru
 
-## Instalace
+Požadavkem je Docker s podporou Compose. Oficiální obraz OpenModelicy je
+dostupný pro platformy podporované zvoleným tagem.
 
-Vytvořte virtuální prostředí a nainstalujte projekt včetně vývojových závislostí:
+```powershell
+docker compose up --build
+```
+
+Aplikace bude dostupná na <http://localhost:8000>. Ukončení:
+
+```powershell
+docker compose down
+```
+
+Port na hostiteli lze změnit v souboru `compose.yaml`, například záznamem
+`8080:8000`.
+
+## Lokální vývoj
+
+Lokální spuštění vyžaduje Python 3.10 nebo novější a příkaz `omc` dostupný
+v systémové cestě.
 
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install -e ".[dev]"
+uvicorn app.main:app --reload
 ```
 
-## Spuštění
-
-```powershell
-python test_script.py
-```
-
-## Testy
+## Kontroly
 
 ```powershell
 pytest
-```
-
-## Kontrola a formátování kódu
-
-```powershell
 ruff check .
 ruff format --check .
 ```
 
-Automatickou opravu a formátování lze provést příkazy:
+Automatická oprava a formátování:
 
 ```powershell
 ruff check --fix .
 ruff format .
 ```
+
+## API
+
+- `GET /api/health` – kontrola dostupnosti aplikace
+- `POST /api/simulations` – spuštění simulace
+- `GET /docs` – interaktivní dokumentace API

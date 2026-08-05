@@ -3,12 +3,15 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "local-ai-test"
+name = "hydroflow-simulator"
 version = "0.1.0"
-description = "Minimal Python project for testing a local environment."
+description = "Webová aplikace pro simulaci proudění vody pomocí OpenModelicy."
 readme = "README.md"
 requires-python = ">=3.10"
-dependencies = []
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.34",
+]
 
 [project.optional-dependencies]
 dev = [
@@ -16,8 +19,8 @@ dev = [
     "ruff>=0.9",
 ]
 
-[tool.setuptools]
-py-modules = ["test_script"]
+[tool.setuptools.packages.find]
+include = ["app*"]
 
 [tool.pytest.ini_options]
 addopts = "-ra"
