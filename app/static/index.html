@@ -11,20 +11,33 @@
   <main class="shell">
     <header>
       <div class="brand"><span class="brand-mark">H</span> HydroFlow</div>
-      <p class="eyebrow">OpenModelica · ustálené proudění</p>
-      <h1>Co udělá tlak<br><em>s průtokem?</em></h1>
-      <p class="intro">Nastavte geometrii trubky a rozdíl tlaku. Model dopočítá průtok i charakter proudění.</p>
+      <p class="eyebrow">OpenModelica · nestacionární proudění</p>
+      <h1>Kdy se hladiny<br><em>vyrovnají?</em></h1>
+      <p class="intro">Dvě otevřené nádoby propojuje trubka. Sledujte, jak rozdíl hladin rozproudí vodu a postupně zanikne.</p>
     </header>
 
     <section class="workspace">
       <form id="simulation-form" class="panel form-panel">
         <div class="panel-heading"><span>01</span><h2>Vstupní hodnoty</h2></div>
         <div class="fields">
-          <label><span>Rozdíl tlaku <b>bar</b></span><input name="pressure_drop_bar" type="number" value="1" min="0.001" max="100" step="any" required></label>
-          <label><span>Délka trubky <b>m</b></span><input name="length_m" type="number" value="10" min="0.001" max="100000" step="any" required></label>
-          <label><span>Vnitřní průměr <b>mm</b></span><input name="diameter_mm" type="number" value="25" min="0.1" max="5000" step="any" required></label>
-          <label><span>Drsnost <b>mm</b></span><input name="roughness_mm" type="number" value="0.0015" min="0" max="10" step="any" required></label>
-          <label><span>Teplota vody <b>°C</b></span><input name="temperature_c" type="number" value="20" min="0.01" max="95" step="any" required></label>
+          <p class="field-group">Nádoby</p>
+          <div class="field-pair">
+            <label><span>Průměr nádoby 1 <b>m</b></span><input name="tank1_diameter_m" type="number" value="0.8" min="0.05" max="20" step="any" required></label>
+            <label><span>Počáteční hladina 1 <b>m</b></span><input name="tank1_initial_level_m" type="number" value="1.2" min="0.001" max="20" step="any" required></label>
+            <label><span>Průměr nádoby 2 <b>m</b></span><input name="tank2_diameter_m" type="number" value="0.8" min="0.05" max="20" step="any" required></label>
+            <label><span>Počáteční hladina 2 <b>m</b></span><input name="tank2_initial_level_m" type="number" value="0.3" min="0.001" max="20" step="any" required></label>
+          </div>
+          <p class="field-group">Spojovací trubka</p>
+          <div class="field-pair">
+            <label><span>Délka trubky <b>m</b></span><input name="pipe_length_m" type="number" value="3" min="0.01" max="10000" step="any" required></label>
+            <label><span>Vnitřní průměr <b>mm</b></span><input name="pipe_diameter_mm" type="number" value="25" min="0.1" max="5000" step="any" required></label>
+          </div>
+          <label><span>Drsnost trubky <b>mm</b></span><input name="roughness_mm" type="number" value="0.0015" min="0" max="10" step="any" required></label>
+          <p class="field-group">Simulace</p>
+          <div class="field-pair">
+            <label><span>Teplota vody <b>°C</b></span><input name="temperature_c" type="number" value="20" min="0.01" max="95" step="any" required></label>
+            <label><span>Doba simulace <b>s</b></span><input name="duration_s" type="number" value="900" min="0.1" max="86400" step="any" required></label>
+          </div>
         </div>
         <button type="submit"><span>Spustit simulaci</span><span aria-hidden="true">→</span></button>
         <p id="status" class="status" role="status" aria-live="polite">Připraveno k výpočtu</p>
@@ -34,7 +47,7 @@
         <div class="panel-heading"><span>02</span><h2 id="results-title">Výsledky simulace</h2></div>
         <div id="flow-visual" class="flow-visual" role="img" aria-label="Voda proudí z horní nádrže potrubím do dolní nádrže">
           <div class="tank upper-tank">
-            <span class="tank-label">Zdrojová nádrž</span>
+            <span class="tank-label">Nádoba 1 · <b id="level-1-label">— m</b></span>
             <div class="tank-body"><div class="tank-water"><i></i><i></i><i></i></div></div>
           </div>
           <div class="pipe pipe-top"></div>
@@ -42,25 +55,26 @@
           <div class="pipe pipe-out"></div>
           <div class="drops" aria-hidden="true"><i></i><i></i><i></i></div>
           <div class="tank lower-tank">
-            <span class="tank-label">Cílová nádrž</span>
+            <span class="tank-label">Nádoba 2 · <b id="level-2-label">— m</b></span>
             <div class="tank-body"><div class="tank-water"><i></i><i></i></div></div>
           </div>
         </div>
         <div id="placeholder" class="placeholder"><div class="pipe-line"></div><p>Výsledky se objeví po spuštění výpočtu.</p></div>
         <div id="results" class="results" hidden>
-          <div class="hero-result"><span>Objemový průtok</span><strong id="flow">—</strong><b>m³/h</b></div>
+          <div class="hero-result"><span>Maximální objemový průtok</span><strong id="flow">—</strong><b>m³/h</b></div>
           <div class="metrics">
-            <article><span>Rychlost</span><strong id="velocity">—</strong><b>m/s</b></article>
-            <article><span>Reynoldsovo číslo</span><strong id="reynolds">—</strong><b id="regime">—</b></article>
-            <article><span>Hmotnostní průtok</span><strong id="mass-flow">—</strong><b>kg/s</b></article>
-            <article><span>Součinitel tření</span><strong id="friction">—</strong><b>Darcy</b></article>
+            <article><span>Konečná hladina 1</span><strong id="final-level-1">—</strong><b>m</b></article>
+            <article><span>Konečná hladina 2</span><strong id="final-level-2">—</strong><b>m</b></article>
+            <article><span>Rovnovážná hladina</span><strong id="equilibrium">—</strong><b>m</b></article>
+            <article><span>Doba vyrovnání</span><strong id="settling-time">—</strong><b>s</b></article>
           </div>
-          <div class="chart-wrap"><div class="chart-title"><span>Pokles tlaku podél trubky</span><b>Δp [bar]</b></div><canvas id="pressure-chart" height="220"></canvas></div>
+          <div class="chart-wrap"><div class="chart-title"><span>Výška hladin v čase</span><b>h [m]</b></div><canvas id="levels-chart" height="220"></canvas></div>
+          <div class="chart-wrap"><div class="chart-title"><span>Průtok v čase</span><b>Q [m³/h]</b></div><canvas id="flow-chart" height="190"></canvas></div>
         </div>
       </section>
     </section>
 
-    <footer>Darcy–Weisbach · voda 0–95 °C · bez místních odporů a převýšení</footer>
+    <footer>Nestacionární Bernoulliho rovnice · Darcy–Weisbach · otevřené nádoby</footer>
   </main>
   <script src="/static/app.js" defer></script>
 </body>
