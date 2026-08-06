@@ -4,9 +4,9 @@ import subprocess
 import tempfile
 from pathlib import Path
 
-from app.schemas import PressurePoint, SimulationInput, SimulationResult
+from app.schemas import SimulationInput, SimulationPoint, SimulationResult
 
-MODEL_FILE = Path(__file__).resolve().parent.parent / "modelica" / "WaterPipe.mo"
+MODEL_FILE = Path(__file__).resolve().parent.parent / "modelica" / "TwoTanks.mo"
 WINDOWS_OMC_PATHS = (
     Path(r"C:\Program Files\OpenModelica1.27.0-64bit\bin\omc.exe"),
     Path(r"C:\Program Files\OpenModelica1.26.0-64bit\bin\omc.exe"),
@@ -21,13 +21,22 @@ def _modelica_number(value: float) -> str:
     return format(value, ".17g")
 
 
-def _read_last_row(result_file: Path) -> dict[str, float]:
+def _read_rows(result_file: Path) -> list[dict[str, float]]:
     try:
         with result_file.open(encoding="utf-8", newline="") as stream:
-            rows = list(csv.DictReader(stream))
+            rows = [
+                {key: float(value) for key, value in row.items() if key}
+                for row in csv.DictReader(stream)
+            ]
         if not rows:
             raise OpenModelicaError("OpenModelica nevytvořila žádná výsledná data.")
-        return {key: float(value) for key, value in rows[-1].items() if key}
+        deduplicated: list[dict[str, float]] = []
+        for row in rows:
+            if deduplicated and row.get("time") == deduplicated[-1].get("time"):
+                deduplicated[-1] = row
+            else:
+                deduplicated.append(row)
+        return deduplicated
     except (OSError, ValueError) as exc:
         raise OpenModelicaError("Výsledek OpenModelicy se nepodařilo načíst.") from exc
 
@@ -39,15 +48,30 @@ def _find_omc() -> str | None:
     return next((str(path) for path in WINDOWS_OMC_PATHS if path.is_file()), None)
 
 
+def _settling_time(points: list[SimulationPoint]) -> float | None:
+    for index, point in enumerate(points):
+        remaining = points[index:]
+        levels_close = all(
+            abs(item.tank1_level_m - item.tank2_level_m) < 0.001 for item in remaining
+        )
+        flow_small = all(abs(item.volume_flow_m3_h) < 0.001 for item in remaining)
+        if levels_close and flow_small:
+            return point.time_s
+    return None
+
+
 def run_simulation(data: SimulationInput) -> SimulationResult:
     omc_command = _find_omc()
     if omc_command is None:
-        raise OpenModelicaError("Příkaz omc není dostupný. Spusťte aplikaci v Dockeru.")
+        raise OpenModelicaError("Příkaz omc není dostupný.")
 
     overrides = {
-        "pressureDrop": data.pressure_drop_bar * 100_000,
-        "pipeLength": data.length_m,
-        "diameter": data.diameter_mm / 1_000,
+        "tank1Diameter": data.tank1_diameter_m,
+        "tank2Diameter": data.tank2_diameter_m,
+        "initialLevel1": data.tank1_initial_level_m,
+        "initialLevel2": data.tank2_initial_level_m,
+        "pipeLength": data.pipe_length_m,
+        "pipeDiameter": data.pipe_diameter_mm / 1_000,
         "roughness": data.roughness_mm / 1_000,
         "temperatureC": data.temperature_c,
     }
@@ -62,7 +86,8 @@ def run_simulation(data: SimulationInput) -> SimulationResult:
         script = work_dir / "simulate.mos"
         script.write_text(
             f'loadFile("{model_file.as_posix()}");\n'
-            "simulate(WaterPipe, startTime=0, stopTime=1, numberOfIntervals=1, "
+            "simulate(TwoTanks, startTime=0, "
+            f"stopTime={_modelica_number(data.duration_s)}, numberOfIntervals=400, "
             f'outputFormat="csv", simflags="-override {override_text}");\n'
             "getErrorString();\n",
             encoding="utf-8",
@@ -79,50 +104,41 @@ def run_simulation(data: SimulationInput) -> SimulationResult:
         except (OSError, subprocess.TimeoutExpired) as exc:
             raise OpenModelicaError("Simulaci se nepodařilo spustit.") from exc
 
-        result_file = work_dir / "WaterPipe_res.csv"
+        result_file = work_dir / "TwoTanks_res.csv"
         if process.returncode != 0 or not result_file.exists():
             details = (process.stderr or process.stdout).strip()
             raise OpenModelicaError(
                 f"OpenModelica simulaci nedokončila. {details[-500:]}"
             )
-        result = _read_last_row(result_file)
+        rows = _read_rows(result_file)
 
-    required = (
-        "volumeFlow",
-        "massFlow",
-        "velocity",
-        "reynolds",
-        "frictionFactor",
-        "rho",
-        "mu",
-    )
+    required = ("time", "level1", "level2", "volumeFlow", "velocity")
     try:
-        values = {name: result[name] for name in required}
+        points = [
+            SimulationPoint(
+                time_s=row["time"],
+                tank1_level_m=row["level1"],
+                tank2_level_m=row["level2"],
+                volume_flow_m3_h=row["volumeFlow"] * 3_600,
+                velocity_m_s=row["velocity"],
+            )
+            for row in rows
+        ]
+        for name in required:
+            rows[-1][name]
     except KeyError as exc:
         raise OpenModelicaError(f"Ve výsledku chybí proměnná {exc.args[0]}.") from exc
 
-    profile = [
-        PressurePoint(
-            distance_m=data.length_m * step / 20,
-            pressure_drop_bar=data.pressure_drop_bar * step / 20,
-        )
-        for step in range(21)
-    ]
-    reynolds = values["reynolds"]
-    if reynolds < 2_300:
-        regime = "laminární"
-    elif reynolds < 4_000:
-        regime = "přechodové"
-    else:
-        regime = "turbulentní"
+    area1 = 3.141592653589793 * data.tank1_diameter_m**2 / 4
+    area2 = 3.141592653589793 * data.tank2_diameter_m**2 / 4
+    equilibrium = (
+        area1 * data.tank1_initial_level_m + area2 * data.tank2_initial_level_m
+    ) / (area1 + area2)
     return SimulationResult(
-        volume_flow_m3_h=values["volumeFlow"] * 3_600,
-        mass_flow_kg_s=values["massFlow"],
-        velocity_m_s=values["velocity"],
-        reynolds_number=reynolds,
-        flow_regime=regime,
-        friction_factor=values["frictionFactor"],
-        density_kg_m3=values["rho"],
-        dynamic_viscosity_pa_s=values["mu"],
-        pressure_profile=profile,
+        points=points,
+        maximum_flow_m3_h=max(abs(point.volume_flow_m3_h) for point in points),
+        final_tank1_level_m=points[-1].tank1_level_m,
+        final_tank2_level_m=points[-1].tank2_level_m,
+        equilibrium_level_m=equilibrium,
+        settling_time_s=_settling_time(points),
     )

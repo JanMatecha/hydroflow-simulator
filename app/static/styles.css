@@ -17,6 +17,9 @@ h1 em { color:var(--aqua); font-weight:400; }
 .panel-heading span { color:var(--aqua); font:700 12px monospace; }
 h2 { margin:0; font-size:16px; letter-spacing:.02em; }
 .fields { display:grid; gap:16px; padding:24px 0; }
+.field-group { margin:4px 0 -4px; color:var(--ink); font:700 10px monospace; text-transform:uppercase; letter-spacing:.12em; }
+.field-group:first-child { margin-top:0; }
+.field-pair { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
 label span { display:flex; justify-content:space-between; color:var(--muted); font-size:13px; margin-bottom:7px; }
 label b { color:var(--aqua); font:600 11px monospace; }
 input { width:100%; padding:12px 13px; color:var(--ink); background:#f8f7f1; border:1px solid var(--line); border-radius:3px; font:600 17px monospace; }
@@ -30,6 +33,7 @@ button:hover { background:var(--aqua); } button:disabled { opacity:.55; cursor:w
 .flow-visual::before { content:""; position:absolute; inset:66% 0 auto; height:1px; background:#bccac3; }
 .tank { position:absolute; z-index:2; }
 .tank-label { display:block; margin-bottom:7px; color:var(--muted); font:600 10px monospace; text-transform:uppercase; letter-spacing:.07em; }
+.tank-label b { color:var(--aqua); }
 .tank-body { position:relative; overflow:hidden; height:88px; border:3px solid var(--ink); border-top:0; background:#ffffff73; box-shadow:inset 0 -7px 13px #174b3a0e; }
 .tank-body::before,.tank-body::after { content:""; position:absolute; z-index:3; top:-1px; width:9px; height:3px; background:var(--ink); }
 .tank-body::before { left:-2px; } .tank-body::after { right:-2px; }
@@ -47,19 +51,16 @@ button:hover { background:var(--aqua); } button:disabled { opacity:.55; cursor:w
 .pipe-down { right:calc(46% - 3px); top:71px; width:18px; height:78px; border-top:0; border-radius:0 0 0 4px; }
 .pipe-down::after { background:repeating-linear-gradient(180deg,#21aaa5 0 14px,#8ce0da 14px 25px); }
 .pipe-out { left:calc(54% - 15px); right:24%; top:131px; height:18px; border-left:0; border-right:0; }
-.flow-visual.running .pipe::after { opacity:1; animation:pipe-flow .6s linear infinite; }
+.flow-visual.playing .pipe::after { opacity:1; animation:pipe-flow .6s linear infinite; }
+.flow-visual.reverse .pipe::after { animation-direction:reverse; }
 .drops { position:absolute; z-index:4; right:23%; top:145px; width:18px; height:45px; }
 .drops i { position:absolute; left:6px; width:7px; height:10px; opacity:0; border-radius:70% 35% 65% 45%; background:#20aaa5; transform:rotate(45deg); }
-.flow-visual.running .drops i { animation:drop 1.05s linear infinite; }
-.flow-visual.running .drops i:nth-child(2) { animation-delay:.35s; } .flow-visual.running .drops i:nth-child(3) { animation-delay:.7s; }
-.flow-visual.running .upper-tank .tank-water { animation:tank-drain var(--flow-duration) ease-out forwards; }
-.flow-visual.running .lower-tank .tank-water { animation:tank-fill var(--flow-duration) ease-out forwards; }
+.flow-visual.playing:not(.reverse) .drops i { animation:drop 1.05s linear infinite; }
+.flow-visual.playing .drops i:nth-child(2) { animation-delay:.35s; } .flow-visual.playing .drops i:nth-child(3) { animation-delay:.7s; }
 @keyframes water-wave { to { transform:translateX(7%) scaleY(.7); } }
 @keyframes bubble { from { transform:translateY(8px); } to { transform:translateY(-47px); opacity:0; } }
 @keyframes pipe-flow { to { background-position:25px 0; } }
 @keyframes drop { 0% { opacity:0; transform:translateY(0) rotate(45deg); } 15% { opacity:1; } 100% { opacity:0; transform:translateY(36px) rotate(45deg); } }
-@keyframes tank-drain { from { height:68%; } to { height:34%; } }
-@keyframes tank-fill { from { height:13%; } to { height:70%; } }
 .placeholder { height:205px; display:grid; place-content:center; text-align:center; color:var(--muted); }
 .pipe-line { width:190px; height:18px; margin:auto; border:1px solid var(--line); border-width:1px 0; background:linear-gradient(90deg,var(--aqua),#b8d9cf); position:relative; }
 .pipe-line::after { content:"→"; position:absolute; right:-20px; top:-8px; color:var(--aqua); font-size:26px; }
@@ -80,6 +81,6 @@ button:hover { background:var(--aqua); } button:disabled { opacity:.55; cursor:w
 canvas { width:100%; margin-top:12px; }
 footer { padding-top:18px; color:var(--muted); font:11px monospace; text-align:right; }
 @media (max-width:800px) { header { display:block; } .brand { margin-bottom:35px; } .eyebrow { margin-bottom:14px; } .intro { margin:24px 0 0; } .workspace { grid-template-columns:1fr; } .result-panel { min-height:520px; } }
-@media (max-width:480px) { .shell { width:min(100% - 24px,1180px); padding-top:20px; } .form-panel,.result-panel { padding:19px; } h1 { font-size:47px; } .metrics { grid-template-columns:1fr; } .metrics article:nth-child(even) { padding-left:0; } }
+@media (max-width:480px) { .shell { width:min(100% - 24px,1180px); padding-top:20px; } .form-panel,.result-panel { padding:19px; } h1 { font-size:47px; } .field-pair,.metrics { grid-template-columns:1fr; } .metrics article:nth-child(even) { padding-left:0; } }
 @media (max-width:560px) { .flow-visual { height:225px; } .upper-tank { left:3%; width:105px; } .lower-tank { right:2%; width:135px; } .pipe-top { left:calc(3% + 102px); right:45%; } .pipe-down { right:calc(45% - 3px); } .pipe-out { left:calc(55% - 15px); right:25%; } .drops { right:24%; } }
-@media (prefers-reduced-motion:reduce) { .tank-water::before,.tank-water i,.flow-visual.running .pipe::after,.flow-visual.running .drops i { animation:none; } .flow-visual.running .upper-tank .tank-water { height:34%; animation:none; } .flow-visual.running .lower-tank .tank-water { height:70%; animation:none; } }
+@media (prefers-reduced-motion:reduce) { .tank-water::before,.tank-water i,.flow-visual.playing .pipe::after,.flow-visual.playing .drops i { animation:none; } }

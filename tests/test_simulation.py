@@ -8,9 +8,9 @@ from app.schemas import SimulationInput
 from app.simulation import OpenModelicaError, run_simulation
 
 
-def test_input_rejects_non_positive_pressure_drop():
+def test_input_rejects_non_positive_initial_level():
     with pytest.raises(ValidationError):
-        SimulationInput(pressure_drop_bar=0)
+        SimulationInput(tank1_initial_level_m=0)
 
 
 def test_missing_omc_has_clear_error(monkeypatch):
@@ -21,13 +21,14 @@ def test_missing_omc_has_clear_error(monkeypatch):
         run_simulation(SimulationInput())
 
 
-def test_simulation_maps_openmodelica_result(monkeypatch):
+def test_simulation_maps_openmodelica_time_series(monkeypatch):
     monkeypatch.setattr("app.simulation.shutil.which", lambda _: "/usr/bin/omc")
 
     def fake_run(*_args, cwd: Path, **_kwargs):
-        (cwd / "WaterPipe_res.csv").write_text(
-            "time,volumeFlow,massFlow,velocity,reynolds,frictionFactor,rho,mu\n"
-            "1,0.001,0.998,2.04,50800,0.023,998,0.001\n",
+        (cwd / "TwoTanks_res.csv").write_text(
+            "time,level1,level2,volumeFlow,velocity\n"
+            "0,1.2,0.3,0,0\n"
+            "10,1.1,0.4,0.001,2.04\n",
             encoding="utf-8",
         )
         return CompletedProcess([], 0, "", "")
@@ -35,7 +36,9 @@ def test_simulation_maps_openmodelica_result(monkeypatch):
     monkeypatch.setattr("app.simulation.subprocess.run", fake_run)
     result = run_simulation(SimulationInput())
 
-    assert result.volume_flow_m3_h == pytest.approx(3.6)
-    assert result.flow_regime == "turbulentní"
-    assert len(result.pressure_profile) == 21
-    assert result.pressure_profile[-1].pressure_drop_bar == 1
+    assert result.maximum_flow_m3_h == pytest.approx(3.6)
+    assert result.final_tank1_level_m == pytest.approx(1.1)
+    assert result.final_tank2_level_m == pytest.approx(0.4)
+    assert result.equilibrium_level_m == pytest.approx(0.75)
+    assert result.settling_time_s is None
+    assert len(result.points) == 2
