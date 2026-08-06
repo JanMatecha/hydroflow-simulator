@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Simulace proudění vody v potrubí pomocí OpenModelicy">
   <title>HydroFlow · Simulace potrubí</title>
-  <link rel="stylesheet" href="/static/styles.css">
+  <link rel="stylesheet" href="/static/styles.css?v=4">
 </head>
 <body>
   <main class="shell">
@@ -50,10 +50,7 @@
             <span class="tank-label">Nádoba 1 · <b id="level-1-label">— m</b></span>
             <div class="tank-body"><div class="tank-water"><i></i><i></i><i></i></div></div>
           </div>
-          <div class="pipe pipe-top"></div>
-          <div class="pipe pipe-down"></div>
-          <div class="pipe pipe-out"></div>
-          <div class="drops" aria-hidden="true"><i></i><i></i><i></i></div>
+          <div class="pipe connecting-pipe" aria-hidden="true"></div>
           <div class="tank lower-tank">
             <span class="tank-label">Nádoba 2 · <b id="level-2-label">— m</b></span>
             <div class="tank-body"><div class="tank-water"><i></i><i></i></div></div>
@@ -76,6 +73,6 @@
 
     <footer>Nestacionární Bernoulliho rovnice · Darcy–Weisbach · otevřené nádoby</footer>
   </main>
-  <script src="/static/app.js" defer></script>
+  <script src="/static/app.js?v=4" defer></script>
 </body>
 </html>
