@@ -3,76 +3,238 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Simulace proudění vody v potrubí pomocí OpenModelicy">
-  <title>HydroFlow · Simulace potrubí</title>
-  <link rel="stylesheet" href="/static/styles.css?v=4">
+  <meta name="description" content="Hydraulické simulace pomocí OpenModelicy">
+  <title>HydroFlow · Hydraulické simulace</title>
+  <link rel="stylesheet" href="/static/styles.css?v=6">
 </head>
 <body>
   <main class="shell">
     <header>
       <div class="brand"><span class="brand-mark">H</span> HydroFlow</div>
-      <p class="eyebrow">OpenModelica · nestacionární proudění</p>
-      <h1>Kdy se hladiny<br><em>vyrovnají?</em></h1>
-      <p class="intro">Dvě otevřené nádoby propojuje trubka. Sledujte, jak rozdíl hladin rozproudí vodu a postupně zanikne.</p>
+      <p class="eyebrow">OpenModelica · hydraulické modely</p>
+      <h1>Modelujte proudění<br><em>vody.</em></h1>
+      <p class="intro">Vyberte úlohu, nastavte fyzikální parametry a prohlédněte si výsledky vypočtené v OpenModelice.</p>
     </header>
 
-    <section class="workspace">
-      <form id="simulation-form" class="panel form-panel">
-        <div class="panel-heading"><span>01</span><h2>Vstupní hodnoty</h2></div>
-        <div class="fields">
-          <p class="field-group">Nádoby</p>
-          <div class="field-pair">
-            <label><span>Průměr nádoby 1 <b>m</b></span><input name="tank1_diameter_m" type="number" value="0.8" min="0.05" max="20" step="any" required></label>
-            <label><span>Počáteční hladina 1 <b>m</b></span><input name="tank1_initial_level_m" type="number" value="1.2" min="0.001" max="20" step="any" required></label>
-            <label><span>Průměr nádoby 2 <b>m</b></span><input name="tank2_diameter_m" type="number" value="0.8" min="0.05" max="20" step="any" required></label>
-            <label><span>Počáteční hladina 2 <b>m</b></span><input name="tank2_initial_level_m" type="number" value="0.3" min="0.001" max="20" step="any" required></label>
-          </div>
-          <p class="field-group">Spojovací trubka</p>
-          <div class="field-pair">
-            <label><span>Délka trubky <b>m</b></span><input name="pipe_length_m" type="number" value="3" min="0.01" max="10000" step="any" required></label>
-            <label><span>Vnitřní průměr <b>mm</b></span><input name="pipe_diameter_mm" type="number" value="25" min="0.1" max="5000" step="any" required></label>
-          </div>
-          <label><span>Drsnost trubky <b>mm</b></span><input name="roughness_mm" type="number" value="0.0015" min="0" max="10" step="any" required></label>
-          <p class="field-group">Simulace</p>
-          <div class="field-pair">
-            <label><span>Teplota vody <b>°C</b></span><input name="temperature_c" type="number" value="20" min="0.01" max="95" step="any" required></label>
-            <label><span>Doba simulace <b>s</b></span><input name="duration_s" type="number" value="900" min="0.1" max="86400" step="any" required></label>
-          </div>
-        </div>
-        <button type="submit"><span>Spustit simulaci</span><span aria-hidden="true">→</span></button>
-        <p id="status" class="status" role="status" aria-live="polite">Připraveno k výpočtu</p>
-      </form>
+    <nav class="model-tabs" role="tablist" aria-label="Modely simulace">
+      <button id="tab-two-tanks" class="model-tab active" type="button" role="tab" aria-selected="true" aria-controls="panel-two-tanks" data-model="two-tanks">
+        <span>01</span><b>Dvě propojené nádoby</b><small>Nestacionární proudění</small>
+      </button>
+      <button id="tab-water-pipe" class="model-tab" type="button" role="tab" aria-selected="false" aria-controls="panel-water-pipe" data-model="water-pipe" tabindex="-1">
+        <span>02</span><b>Samostatná trubka</b><small>Ustálené proudění</small>
+      </button>
+      <button id="tab-garden-irrigation" class="model-tab" type="button" role="tab" aria-selected="false" aria-controls="panel-garden-irrigation" data-model="garden-irrigation" tabindex="-1">
+        <span>03</span><b>Kapková závlaha</b><small>10 záhonů · 40 řádků</small>
+      </button>
+    </nav>
 
-      <section class="panel result-panel" aria-labelledby="results-title">
-        <div class="panel-heading"><span>02</span><h2 id="results-title">Výsledky simulace</h2></div>
-        <div id="flow-visual" class="flow-visual" role="img" aria-label="Voda proudí z horní nádrže potrubím do dolní nádrže">
-          <div class="tank upper-tank">
-            <span class="tank-label">Nádoba 1 · <b id="level-1-label">— m</b></span>
-            <div class="tank-body"><div class="tank-water"><i></i><i></i><i></i></div></div>
+    <section id="panel-two-tanks" class="model-panel active" role="tabpanel" aria-labelledby="tab-two-tanks" data-model-panel="two-tanks">
+      <div class="model-summary">
+        <span>Bernoulli · Darcy–Weisbach</span>
+        <p>Dvě otevřené nádoby propojuje trubka. Rozdíl hladin uvede vodu do pohybu a postupně zaniká.</p>
+      </div>
+      <div class="workspace">
+        <form id="two-tanks-form" class="panel form-panel">
+          <div class="panel-heading"><span>01</span><h2>Vstupní hodnoty</h2></div>
+          <div class="fields">
+            <p class="field-group">Nádoby</p>
+            <div class="field-pair">
+              <label><span>Průměr nádoby 1 <b>m</b></span><input name="tank1_diameter_m" type="number" value="0.8" min="0.05" max="20" step="any" required></label>
+              <label><span>Počáteční hladina 1 <b>m</b></span><input name="tank1_initial_level_m" type="number" value="1.2" min="0.001" max="20" step="any" required></label>
+              <label><span>Průměr nádoby 2 <b>m</b></span><input name="tank2_diameter_m" type="number" value="0.8" min="0.05" max="20" step="any" required></label>
+              <label><span>Počáteční hladina 2 <b>m</b></span><input name="tank2_initial_level_m" type="number" value="0.3" min="0.001" max="20" step="any" required></label>
+            </div>
+            <p class="field-group">Spojovací trubka</p>
+            <div class="field-pair">
+              <label><span>Délka trubky <b>m</b></span><input name="pipe_length_m" type="number" value="3" min="0.01" max="10000" step="any" required></label>
+              <label><span>Vnitřní průměr <b>mm</b></span><input name="pipe_diameter_mm" type="number" value="25" min="0.1" max="5000" step="any" required></label>
+            </div>
+            <label><span>Drsnost trubky <b>mm</b></span><input name="roughness_mm" type="number" value="0.0015" min="0" max="10" step="any" required></label>
+            <p class="field-group">Simulace</p>
+            <div class="field-pair">
+              <label><span>Teplota vody <b>°C</b></span><input name="temperature_c" type="number" value="20" min="0.01" max="95" step="any" required></label>
+              <label><span>Doba simulace <b>s</b></span><input name="duration_s" type="number" value="900" min="0.1" max="86400" step="any" required></label>
+            </div>
           </div>
-          <div class="pipe connecting-pipe" aria-hidden="true"></div>
-          <div class="tank lower-tank">
-            <span class="tank-label">Nádoba 2 · <b id="level-2-label">— m</b></span>
-            <div class="tank-body"><div class="tank-water"><i></i><i></i></div></div>
+          <button class="submit-button" type="submit"><span>Spustit simulaci</span><span aria-hidden="true">→</span></button>
+          <p class="status" role="status" aria-live="polite">Připraveno k výpočtu</p>
+        </form>
+
+        <section class="panel result-panel" aria-labelledby="two-tanks-results-title">
+          <div class="panel-heading"><span>02</span><h2 id="two-tanks-results-title">Výsledky simulace</h2></div>
+          <div class="flow-visual" role="img" aria-label="Dvě nádoby vedle sebe propojené jednou trubkou u dna">
+            <div class="tank tank-one">
+              <span class="tank-label">Nádoba 1 · <b class="level-1-label">— m</b></span>
+              <div class="tank-body"><div class="tank-water"><i></i><i></i><i></i></div></div>
+            </div>
+            <div class="pipe connecting-pipe" aria-hidden="true"></div>
+            <div class="tank tank-two">
+              <span class="tank-label">Nádoba 2 · <b class="level-2-label">— m</b></span>
+              <div class="tank-body"><div class="tank-water"><i></i><i></i></div></div>
+            </div>
           </div>
-        </div>
-        <div id="placeholder" class="placeholder"><div class="pipe-line"></div><p>Výsledky se objeví po spuštění výpočtu.</p></div>
-        <div id="results" class="results" hidden>
-          <div class="hero-result"><span>Maximální objemový průtok</span><strong id="flow">—</strong><b>m³/h</b></div>
-          <div class="metrics">
-            <article><span>Konečná hladina 1</span><strong id="final-level-1">—</strong><b>m</b></article>
-            <article><span>Konečná hladina 2</span><strong id="final-level-2">—</strong><b>m</b></article>
-            <article><span>Rovnovážná hladina</span><strong id="equilibrium">—</strong><b>m</b></article>
-            <article><span>Doba vyrovnání</span><strong id="settling-time">—</strong><b>s</b></article>
+          <div class="placeholder"><div class="pipe-line"></div><p>Výsledky se objeví po spuštění výpočtu.</p></div>
+          <div class="results" hidden>
+            <div class="hero-result"><span>Maximální objemový průtok</span><strong class="maximum-flow">—</strong><b>m³/h</b></div>
+            <div class="metrics">
+              <article><span>Konečná hladina 1</span><strong class="final-level-1">—</strong><b>m</b></article>
+              <article><span>Konečná hladina 2</span><strong class="final-level-2">—</strong><b>m</b></article>
+              <article><span>Rovnovážná hladina</span><strong class="equilibrium">—</strong><b>m</b></article>
+              <article><span>Doba vyrovnání</span><strong class="settling-time">—</strong><b>s</b></article>
+            </div>
+            <div class="chart-wrap"><div class="chart-title"><span>Výška hladin v čase</span><b>h [m]</b></div><canvas class="levels-chart" height="220"></canvas></div>
+            <div class="chart-wrap"><div class="chart-title"><span>Průtok v čase</span><b>Q [m³/h]</b></div><canvas class="flow-chart" height="190"></canvas></div>
           </div>
-          <div class="chart-wrap"><div class="chart-title"><span>Výška hladin v čase</span><b>h [m]</b></div><canvas id="levels-chart" height="220"></canvas></div>
-          <div class="chart-wrap"><div class="chart-title"><span>Průtok v čase</span><b>Q [m³/h]</b></div><canvas id="flow-chart" height="190"></canvas></div>
-        </div>
-      </section>
+        </section>
+      </div>
     </section>
 
-    <footer>Nestacionární Bernoulliho rovnice · Darcy–Weisbach · otevřené nádoby</footer>
+    <section id="panel-water-pipe" class="model-panel" role="tabpanel" aria-labelledby="tab-water-pipe" data-model-panel="water-pipe" hidden>
+      <div class="model-summary">
+        <span>Darcy–Weisbach · Swamee–Jain</span>
+        <p>Z rozdílu tlaku a geometrie rovné kruhové trubky vypočítá ustálený průtok, rychlost a režim proudění.</p>
+      </div>
+      <div class="workspace">
+        <form id="water-pipe-form" class="panel form-panel">
+          <div class="panel-heading"><span>01</span><h2>Vstupní hodnoty</h2></div>
+          <div class="fields">
+            <p class="field-group">Tlak a geometrie</p>
+            <label><span>Rozdíl tlaku <b>bar</b></span><input name="pressure_drop_bar" type="number" value="1" min="0.001" max="100" step="any" required></label>
+            <div class="field-pair">
+              <label><span>Délka trubky <b>m</b></span><input name="length_m" type="number" value="10" min="0.001" max="100000" step="any" required></label>
+              <label><span>Vnitřní průměr <b>mm</b></span><input name="diameter_mm" type="number" value="25" min="0.1" max="5000" step="any" required></label>
+            </div>
+            <p class="field-group">Materiál a voda</p>
+            <div class="field-pair">
+              <label><span>Drsnost trubky <b>mm</b></span><input name="roughness_mm" type="number" value="0.0015" min="0" max="10" step="any" required></label>
+              <label><span>Teplota vody <b>°C</b></span><input name="temperature_c" type="number" value="20" min="0.01" max="95" step="any" required></label>
+            </div>
+          </div>
+          <button class="submit-button" type="submit"><span>Spustit simulaci</span><span aria-hidden="true">→</span></button>
+          <p class="status" role="status" aria-live="polite">Připraveno k výpočtu</p>
+        </form>
+
+        <section class="panel result-panel pipe-result-panel" aria-labelledby="water-pipe-results-title">
+          <div class="panel-heading"><span>02</span><h2 id="water-pipe-results-title">Výsledky simulace</h2></div>
+          <div class="single-pipe-visual" role="img" aria-label="Voda proudící rovnou trubkou z vyššího tlaku k nižšímu">
+            <div class="pressure-gauge high"><span>p₁</span><i></i></div>
+            <div class="pipe-shell"><div class="pipe-water"></div></div>
+            <div class="pressure-gauge low"><span>p₂</span><i></i></div>
+            <b class="flow-arrow">→</b>
+          </div>
+          <div class="placeholder"><div class="pipe-line"></div><p>Výsledky se objeví po spuštění výpočtu.</p></div>
+          <div class="results" hidden>
+            <div class="hero-result"><span>Objemový průtok</span><strong class="pipe-volume-flow">—</strong><b>m³/h</b></div>
+            <div class="metrics">
+              <article><span>Rychlost vody</span><strong class="pipe-velocity">—</strong><b>m/s</b></article>
+              <article><span>Hmotnostní průtok</span><strong class="pipe-mass-flow">—</strong><b>kg/s</b></article>
+              <article><span>Reynoldsovo číslo</span><strong class="pipe-reynolds">—</strong><b class="pipe-regime">—</b></article>
+              <article><span>Součinitel tření</span><strong class="pipe-friction">—</strong><b>—</b></article>
+            </div>
+            <div class="chart-wrap"><div class="chart-title"><span>Tlaková ztráta po délce trubky</span><b>Δp [bar]</b></div><canvas class="pressure-chart" height="220"></canvas></div>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <section id="panel-garden-irrigation" class="model-panel" role="tabpanel" aria-labelledby="tab-garden-irrigation" data-model-panel="garden-irrigation" hidden>
+      <div class="model-summary">
+        <span>Gravitace · tlakové ztráty · nelineární kapkovače</span>
+        <p>První ustálená verze počítá současně zóny A a B, deset záhonů a čtyřicet ekvivalentních kapkových řádků.</p>
+      </div>
+      <div class="workspace irrigation-workspace">
+        <form id="garden-irrigation-form" class="panel form-panel irrigation-form">
+          <div class="panel-heading"><span>01</span><h2>Nastavení závlahy</h2></div>
+          <div class="fields">
+            <p class="field-group">Rychlé scénáře</p>
+            <div class="preset-buttons" aria-label="Přednastavené scénáře">
+              <button type="button" class="preset-button active" data-irrigation-preset="all">Všechny</button>
+              <button type="button" class="preset-button" data-irrigation-preset="one">Jen A</button>
+              <button type="button" class="preset-button" data-irrigation-preset="balanced">Vyvážení</button>
+            </div>
+
+            <p class="field-group">IBC a hlavní rozvod</p>
+            <div class="field-pair">
+              <label><span>Hladina nad výtokem <b>m</b></span><input name="tank_water_level_m" type="number" value="1" min="0" max="20" step="any" required></label>
+              <label><span>Doba závlahy <b>min</b></span><input name="irrigation_duration_min" type="number" value="60" min="1" max="720" step="any" required></label>
+              <label><span>Plocha dvou IBC <b>m²</b></span><input name="tank_area_m2" type="number" value="2" min="0.1" max="20" step="any" required></label>
+              <label><span>Ztráta filtru <b>m v. s.</b></span><input name="filter_head_loss_m" type="number" value="0.2" min="0" max="10" step="any" required></label>
+              <label><span>Průměr hlavního rozvodu <b>mm</b></span><input name="main_diameter_mm" type="number" value="25" min="5.01" max="100" step="any" required></label>
+              <label><span>Vnitřní průměr řádku <b>mm</b></span><input name="row_inner_diameter_mm" type="number" value="13.6" min="3.01" max="30" step="any" required></label>
+            </div>
+
+            <p class="field-group">Kapkovače EHCLB162-33-100</p>
+            <div class="field-pair">
+              <label><span>Rozteč <b>m</b></span><input name="dripper_spacing_m" type="number" value="0.33" min="0.051" max="2" step="any" required></label>
+              <label><span>Jmenovitý průtok <b>l/h</b></span><input name="nominal_emitter_flow_l_h" type="number" value="2" min="0.001" max="20" step="any" required></label>
+              <label><span>Referenční tlak <b>bar</b></span><input name="nominal_emitter_pressure_bar" type="number" value="1" min="0.001" max="10" step="any" required></label>
+              <label><span>Exponent charakteristiky <b>x</b></span><input name="emitter_exponent" type="number" value="0.5" min="0.1" max="1.5" step="any" required></label>
+            </div>
+
+            <p class="field-group">Otevření vstupních ventilů</p>
+            <div class="valve-grid">
+              <label><span>A <b>zóna A</b></span><input name="opening_a" type="number" value="1" min="0" max="1" step="0.01" required></label>
+              <label><span>B <b>zóna A</b></span><input name="opening_b" type="number" value="1" min="0" max="1" step="0.01" required></label>
+              <label><span>C <b>zóna A</b></span><input name="opening_c" type="number" value="1" min="0" max="1" step="0.01" required></label>
+              <label><span>D <b>zóna A</b></span><input name="opening_d" type="number" value="1" min="0" max="1" step="0.01" required></label>
+              <label><span>E <b>zóna B</b></span><input name="opening_e" type="number" value="1" min="0" max="1" step="0.01" required></label>
+              <label><span>F <b>zóna B</b></span><input name="opening_f" type="number" value="1" min="0" max="1" step="0.01" required></label>
+              <label><span>G <b>zóna B</b></span><input name="opening_g" type="number" value="1" min="0" max="1" step="0.01" required></label>
+              <label><span>H <b>zóna B</b></span><input name="opening_h" type="number" value="1" min="0" max="1" step="0.01" required></label>
+              <label><span>I <b>zóna B</b></span><input name="opening_i" type="number" value="1" min="0" max="1" step="0.01" required></label>
+              <label><span>J <b>zóna B</b></span><input name="opening_j" type="number" value="1" min="0" max="1" step="0.01" required></label>
+            </div>
+          </div>
+          <button class="submit-button" type="submit"><span>Spočítat závlahu</span><span aria-hidden="true">→</span></button>
+          <p class="status" role="status" aria-live="polite">Připraveno k výpočtu</p>
+        </form>
+
+        <section class="panel result-panel irrigation-result-panel" aria-labelledby="irrigation-results-title">
+          <div class="panel-heading"><span>02</span><h2 id="irrigation-results-title">Výsledky závlahy</h2></div>
+          <div class="irrigation-visual" role="img" aria-label="Dvě IBC nádrže zásobují zóny A a B s deseti záhony">
+            <div class="ibc-source"><i></i><i></i><b>2× IBC</b><span>2000 l</span></div>
+            <div class="irrigation-filter">FILTR</div>
+            <div class="irrigation-main"></div>
+            <div class="zone-network zone-a"><b>ZÓNA A · 25 m</b><div><i>A</i><i>B</i><i>C</i><i>D</i></div></div>
+            <div class="zone-network zone-b"><b>ZÓNA B · 15 m</b><div><i>E</i><i>F</i><i>G</i><i>H</i><i>I</i><i>J</i></div></div>
+          </div>
+          <div class="placeholder"><div class="pipe-line"></div><p>Výsledky se objeví po spuštění výpočtu.</p></div>
+          <div class="results irrigation-results" hidden>
+            <div class="hero-result"><span>Celkový průtok ze zdroje</span><strong class="irrigation-total-flow">—</strong><b>l/min</b></div>
+            <div class="metrics">
+              <article><span>Tlak za filtrem</span><strong class="irrigation-filter-pressure">—</strong><b>bar</b></article>
+              <article><span>Spotřeba za zadaný čas</span><strong class="irrigation-water">—</strong><b>l</b></article>
+              <article><span>Odhad hladiny na konci</span><strong class="irrigation-end-level">—</strong><b>m</b></article>
+              <article><span>Rovnoměrnost kapkovačů</span><strong class="irrigation-uniformity">—</strong><b>%</b></article>
+            </div>
+            <ul class="result-warnings" aria-label="Upozornění modelu"></ul>
+            <div class="chart-wrap"><div class="chart-title"><span>Průtok jednotlivými záhony</span><b>Q [l/min]</b></div><canvas class="irrigation-flow-chart" height="220"></canvas></div>
+
+            <div class="table-wrap">
+              <div class="chart-title"><span>Bilance záhonů</span><b>cílová dodávka = 100 %</b></div>
+              <table class="results-table">
+                <thead><tr><th>Záhon</th><th>Ventil</th><th>Tlak</th><th>Průtok</th><th>Voda</th><th>Poměr</th></tr></thead>
+                <tbody class="beds-table-body"></tbody>
+              </table>
+            </div>
+
+            <details class="row-details">
+              <summary>Průtoky všech 40 kapkových řádků</summary>
+              <div class="table-wrap">
+                <table class="results-table compact">
+                  <thead><tr><th>Řádek</th><th>Kapkovače</th><th>Průtok</th><th>Tlak začátek</th><th>Tlak konec</th></tr></thead>
+                  <tbody class="rows-table-body"></tbody>
+                </table>
+              </div>
+            </details>
+            <p class="model-note">Řádky jsou v první verzi ekvivalentní prvky. Detailní pokles průtoku mezi jednotlivými kapkovači bude další úroveň modelu.</p>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <footer>OpenModelica · Bernoulliho rovnice · Darcy–Weisbach</footer>
   </main>
-  <script src="/static/app.js?v=4" defer></script>
+  <script src="/static/app.js?v=6" defer></script>
 </body>
 </html>
